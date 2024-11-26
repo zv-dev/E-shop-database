@@ -21,56 +21,54 @@ DECLARE cardPaymentId constant int := 2;
 DECLARE bankTransferPaymentId constant int := 4;
 DECLARE totalAmount int;
 BEGIN
-		SELECT INTO orderNumber order_header.id 
-		FROM order_header
-		WHERE order_header.id=orderNumber;
+    SELECT INTO orderNumber order_header.id 
+    FROM order_header
+    WHERE order_header.id=orderNumber;
 
-		IF NOT FOUND THEN
-			RAISE EXCEPTION 'Nincs ilyen rendelés!';
-		END IF;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Nincs ilyen rendelés!';
+    END IF;
 
-		SELECT INTO orderIsInvoiced invoice.order_header_id 
-		FROM invoice
-		WHERE invoice.order_header_id=orderNumber;
+    SELECT INTO orderIsInvoiced invoice.order_header_id 
+    FROM invoice
+    WHERE invoice.order_header_id=orderNumber;
 
-		IF FOUND THEN
-			RAISE EXCEPTION 'A rendelés már ki van számlázva!';
-		END IF;
+    IF FOUND THEN
+        RAISE EXCEPTION 'A rendelés már ki van számlázva!';
+    END IF;
 
-		SELECT INTO stockOfProduct product_stock.quantity
-		FROM order_items LEFT JOIN products ON order_items.product_id=products.id 
-		LEFT JOIN product_stock ON order_items.product_id=product_stock.product_id
-		WHERE products.product_type LIKE 'Termék' AND order_items.order_header_id=orderNumber AND order_items.quantity > product_stock.quantity LIMIT 1;
+    SELECT INTO stockOfProduct product_stock.quantity
+    FROM order_items LEFT JOIN products ON order_items.product_id=products.id 
+    LEFT JOIN product_stock ON order_items.product_id=product_stock.product_id
+    WHERE products.product_type LIKE 'Termék' AND order_items.order_header_id=orderNumber AND order_items.quantity > product_stock.quantity LIMIT 1;
 
-		IF FOUND THEN
-			RAISE EXCEPTION 'Nincs elegendő készletmennyiség!';
-		END IF;
+    IF FOUND THEN
+        RAISE EXCEPTION 'Nincs elegendő készletmennyiség!';
+    END IF;
 
-		SELECT INTO notPaidOrder order_header.id
-		FROM order_header
-		WHERE (payment_type_id=cardPaymentId OR payment_type_id=bankTransferPaymentId) AND payment_status IS FALSE AND order_header.id=orderNumber;
+    SELECT INTO notPaidOrder order_header.id
+    FROM order_header
+    WHERE (payment_type_id=cardPaymentId OR payment_type_id=bankTransferPaymentId) AND payment_status IS FALSE AND order_header.id=orderNumber;
 
-		IF FOUND THEN
-			RAISE EXCEPTION 'Nincs kifizetve! %', notPaidOrder;
-		END IF;
+    IF FOUND THEN
+        RAISE EXCEPTION 'Nincs kifizetve! %', notPaidOrder;
+    END IF;
 
-		SELECT INTO totalAmount * FROM get_order_total_amount (orderNumber);
-	
+    SELECT INTO totalAmount * FROM get_order_total_amount (orderNumber);
 
-		INSERT INTO invoice(order_header_id, total) VALUES (orderNumber, totalAmount);
-		
-		IF FOUND THEN
-			RAISE NOTICE 'számlaadatok sikeresen beszúrva';
-		ELSE
-			RAISE EXCEPTION 'számlaadatok beszúrása sikertelen';
-		END IF;
+    INSERT INTO invoice(order_header_id, total) VALUES (orderNumber, totalAmount);
+    
+    IF FOUND THEN
+        RAISE NOTICE 'számlaadatok sikeresen beszúrva';
+    ELSE
+        RAISE EXCEPTION 'számlaadatok beszúrása sikertelen';
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 COMMIT;
 
 -- az generate_invoice() tárolt eljárás meghívása
 CALL generate_invoice(15);
-
 
 --Termékár érvénybe lépése a price_actualisation_time mező értékének frissítésével *******************************************************************************************************************************************************************************************
 --bemeneti paraméter: nincs
@@ -83,14 +81,14 @@ CREATE OR REPLACE PROCEDURE actualize_product_price() AS $$ --actualize_product_
 DECLARE productId int;
 DECLARE productPrice decimal;
 BEGIN
-	FOR productId, productPrice IN
-		SELECT product_id, price
-		FROM product_price_changes
-		WHERE from_date >= current_date
-	LOOP
-		UPDATE product_price_changes SET price_actualisation_time = now() WHERE product_id = productId and from_date = current_date;
-		RAISE NOTICE 'Termék azonosító % : , Termék ár %', productId, productPrice;
-	END LOOP;
+    FOR productId, productPrice IN
+        SELECT product_id, price
+        FROM product_price_changes
+        WHERE from_date >= current_date
+    LOOP
+        UPDATE product_price_changes SET price_actualisation_time = now() WHERE product_id = productId and from_date = current_date;
+        RAISE NOTICE 'Termék azonosító % : , Termék ár %', productId, productPrice;
+    END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 

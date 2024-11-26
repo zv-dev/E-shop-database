@@ -216,7 +216,7 @@ mező | adattípus | szerep | korlátozás |
 id | serial(4) | PK, generált |  | 
 order_header_id | int(4) | U, FK (order_header) |  | 
 total | decimal(10, 2) |  | total >= 0 |  |
-updated_at | timestamp | kötelező, alapért: current_timestamp |  | 
+created_at | timestamp | kötelező, alapért: current_timestamp |  | 
 
 ## Egyed-kapcsolat diagram
 

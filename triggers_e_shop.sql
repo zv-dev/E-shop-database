@@ -5,15 +5,15 @@ RETURNS TRIGGER AS $$
 DECLARE productId int;
 DECLARE orderedQuantity int;
 BEGIN
-	FOR productId, orderedQuantity IN
-		SELECT products.id, quantity
-		FROM order_items LEFT JOIN products on order_items.product_id=products.id
-		WHERE products.product_type LIKE 'Termék' AND order_items.order_header_id=NEW.order_header_id
-	LOOP
-		UPDATE product_stock SET quantity = quantity - orderedQuantity WHERE product_stock.product_id = productId;
-	END LOOP;
-	RETURN NEW;
-	RAISE NOTICE 'Termék azonosító % : , Termék mennyiség %', productId, orderedQuantity;
+    FOR productId, orderedQuantity IN
+        SELECT products.id, quantity
+        FROM order_items LEFT JOIN products on order_items.product_id=products.id
+        WHERE products.product_type LIKE 'Termék' AND order_items.order_header_id=NEW.order_header_id
+    LOOP
+        UPDATE product_stock SET quantity = quantity - orderedQuantity WHERE product_stock.product_id = productId;
+    END LOOP;
+    RETURN NEW;
+    RAISE NOTICE 'Termék azonosító % : , Termék mennyiség %', productId, orderedQuantity;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -57,7 +57,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION do_not_update_addresses()
 RETURNS TRIGGER AS $$
 BEGIN
-	RAISE EXCEPTION 'address tábla sorai nem módosíthatóak';
+    RAISE EXCEPTION 'address tábla sorai nem módosíthatóak';
 END;
 $$ LANGUAGE plpgsql;
 
@@ -71,7 +71,7 @@ EXECUTE FUNCTION do_not_update_addresses();
 CREATE OR REPLACE FUNCTION do_not_update_invoice()
 RETURNS TRIGGER AS $$
 BEGIN
-	RAISE EXCEPTION 'invoice tábla sorai nem módosíthatóak';
+    RAISE EXCEPTION 'invoice tábla sorai nem módosíthatóak';
 END;
 $$ LANGUAGE plpgsql;
 

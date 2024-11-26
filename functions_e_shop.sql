@@ -7,12 +7,12 @@
 CREATE OR REPLACE FUNCTION get_product_price(productId int, orderDate timestamp DEFAULT now()) RETURNS decimal AS $$
 DECLARE PriceOfOrderedProduct decimal;
 BEGIN
-	SELECT INTO PriceOfOrderedProduct price
-	FROM product_price_changes
-	WHERE price_actualisation_time <= orderDate AND product_id=productId
-	ORDER BY from_date DESC
-	LIMIT 1;
-	RETURN PriceOfOrderedProduct;
+    SELECT INTO PriceOfOrderedProduct price
+    FROM product_price_changes
+    WHERE price_actualisation_time <= orderDate AND product_id=productId
+    ORDER BY from_date DESC
+    LIMIT 1;
+    RETURN PriceOfOrderedProduct;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -29,12 +29,12 @@ CREATE OR REPLACE FUNCTION get_order_total_amount(orderNumber int) RETURNS decim
 DECLARE sumPrice decimal := 0;
 DECLARE row record;
 BEGIN
-	FOR row IN
+    FOR row IN
         SELECT product_id, quantity FROM order_items WHERE order_items.order_header_id = orderNumber
     LOOP
-	    sumPrice :=  sumPrice + row.quantity * (SELECT * FROM get_product_price (row.product_id, (SELECT created_at FROM order_header WHERE order_header.id = orderNumber)));
+        sumPrice :=  sumPrice + row.quantity * (SELECT * FROM get_product_price (row.product_id, (SELECT created_at FROM order_header WHERE order_header.id = orderNumber)));
     END LOOP;
-	RETURN sumPrice;
+    RETURN sumPrice;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -49,12 +49,12 @@ SELECT get_order_total_amount(8);
 
 CREATE OR REPLACE FUNCTION get_line_total_amount(orderNumber int) RETURNS TABLE (productId int, lineTotalAmount decimal)AS $$
 BEGIN
-	FOR productId, lineTotalAmount IN
+    FOR productId, lineTotalAmount IN
         SELECT product_id, (quantity*(SELECT * FROM get_product_price(product_id, order_header.created_at)))
-		FROM order_items LEFT JOIN order_header ON order_header.id=order_items.order_header_id
-		WHERE order_items.order_header_id=orderNumber
+        FROM order_items LEFT JOIN order_header ON order_header.id=order_items.order_header_id
+        WHERE order_items.order_header_id=orderNumber
     LOOP
-	    RETURN NEXT;
+        RETURN NEXT;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
@@ -72,18 +72,18 @@ SELECT * FROM get_line_total_amount(8);
 
 CREATE OR REPLACE FUNCTION best_selling_products(hit int, fromDate date, toDate date) RETURNS TABLE (prodId int, prodName varchar, prodQuantity int) AS $$
 BEGIN
-	FOR prodId, prodName, prodQuantity IN
-		SELECT order_items.product_id, products.name, SUM(quantity)
-		FROM order_items 
-		LEFT JOIN products ON order_items.product_id=products.id
-		LEFT JOIN order_header ON order_items.order_header_id=order_header.id
-		WHERE product_type='Termék' AND order_header.created_at BETWEEN fromDate AND toDate
-		GROUP BY order_items.product_id, products.name
-		ORDER BY SUM(quantity) DESC
-		FETCH FIRST hit ROWS WITH TIES
-	LOOP
-		RETURN NEXT;
-	END LOOP;
+    FOR prodId, prodName, prodQuantity IN
+        SELECT order_items.product_id, products.name, SUM(quantity)
+        FROM order_items 
+        LEFT JOIN products ON order_items.product_id=products.id
+        LEFT JOIN order_header ON order_items.order_header_id=order_header.id
+        WHERE product_type='Termék' AND order_header.created_at BETWEEN fromDate AND toDate
+        GROUP BY order_items.product_id, products.name
+        ORDER BY SUM(quantity) DESC
+        FETCH FIRST hit ROWS WITH TIES
+    LOOP
+        RETURN NEXT;
+    END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -100,17 +100,17 @@ SELECT * FROM best_selling_products(5, '20240101', '20241010');
 
 CREATE OR REPLACE FUNCTION most_purchasing_customer(hit int, fromDate date, toDate date) RETURNS TABLE (userId int, fullName varchar, emailAddress varchar, quantityOfOrders int) AS $$
 BEGIN
-	FOR userId, fullName, emailAddress, quantityOfOrders IN
-		SELECT user_id, full_name, email, COUNT(user_id)
-		FROM order_header 
-		LEFT JOIN users ON user_id=users.id
-		WHERE order_header.created_at BETWEEN fromDate AND toDate
-		GROUP BY user_id, full_name, email
-		ORDER BY COUNT(user_id) DESC
-		FETCH FIRST hit ROWS WITH TIES
-	LOOP
-		RETURN NEXT;
-	END LOOP;
+    FOR userId, fullName, emailAddress, quantityOfOrders IN
+        SELECT user_id, full_name, email, COUNT(user_id)
+        FROM order_header 
+        LEFT JOIN users ON user_id=users.id
+        WHERE order_header.created_at BETWEEN fromDate AND toDate
+        GROUP BY user_id, full_name, email
+        ORDER BY COUNT(user_id) DESC
+        FETCH FIRST hit ROWS WITH TIES
+    LOOP
+        RETURN NEXT;
+    END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -131,23 +131,23 @@ SELECT * FROM most_purchasing_customer(5, '20240101', '20241010');
  
 CREATE OR REPLACE FUNCTION customers_ordering_the_highest_value(hit int, fromDate date, toDate date) RETURNS TABLE (userId int, fullName varchar, emailAddress varchar, orderTotalAmount decimal) AS $$
 BEGIN
-	FOR userId, fullName, emailAddress, orderTotalAmount IN
-		SELECT user_id, full_name, email, SUM(order_total_value)
-		FROM (
-			 SELECT order_items.order_header_id, user_id, full_name, email, (SELECT * FROM get_order_total_amount(order_items.order_header_id)) AS order_total_value
-			 FROM order_items LEFT JOIN products ON order_items.product_id=products.id 
-			 LEFT JOIN order_header ON order_items.order_header_id=order_header.id 
-			 LEFT JOIN users ON order_header.user_id=users.id 
-			 WHERE order_header.created_at between fromDate AND toDate
-			 GROUP BY order_items.order_header_id, user_id, full_name, email
-			 ORDER BY user_id, order_header_id
-			 )
-		GROUP BY user_id, full_name, email
-		ORDER BY SUM(order_total_value) DESC
-		FETCH FIRST hit ROWS WITH TIES
-	LOOP
-		RETURN NEXT;
-	END LOOP;
+    FOR userId, fullName, emailAddress, orderTotalAmount IN
+        SELECT user_id, full_name, email, SUM(order_total_value)
+        FROM (
+             SELECT order_items.order_header_id, user_id, full_name, email, (SELECT * FROM get_order_total_amount(order_items.order_header_id)) AS order_total_value
+             FROM order_items LEFT JOIN products ON order_items.product_id=products.id 
+             LEFT JOIN order_header ON order_items.order_header_id=order_header.id 
+             LEFT JOIN users ON order_header.user_id=users.id 
+             WHERE order_header.created_at between fromDate AND toDate
+             GROUP BY order_items.order_header_id, user_id, full_name, email
+             ORDER BY user_id, order_header_id
+             )
+        GROUP BY user_id, full_name, email
+        ORDER BY SUM(order_total_value) DESC
+        FETCH FIRST hit ROWS WITH TIES
+    LOOP
+        RETURN NEXT;
+    END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -162,15 +162,15 @@ SELECT * FROM customers_ordering_the_highest_value(2, '20240101', '20241010');
 
 CREATE OR REPLACE FUNCTION most_expensive_product() RETURNS TABLE (prodId int, prodName varchar, prodPrice decimal) AS $$
 BEGIN
-	FOR prodId, prodName, prodPrice in
-		SELECT id, products.name, (SELECT * FROM get_product_price(products.id)) as price
-		FROM products
-		WHERE product_type LIKE 'Termék' 
-		ORDER BY price DESC
-		FETCH FIRST 1 ROWS WITH TIES
-	LOOP
-		RETURN NEXT;
-	END LOOP;	
+    FOR prodId, prodName, prodPrice in
+        SELECT id, products.name, (SELECT * FROM get_product_price(products.id)) as price
+        FROM products
+        WHERE product_type LIKE 'Termék' 
+        ORDER BY price DESC
+        FETCH FIRST 1 ROWS WITH TIES
+    LOOP
+        RETURN NEXT;
+    END LOOP;	
 END;
 $$ LANGUAGE plpgsql;
 
@@ -185,15 +185,15 @@ SELECT * FROM most_expensive_product();
 
 CREATE OR REPLACE FUNCTION order_total_value_with_payment_status_payment_type(orderNumber int) RETURNS TABLE (paymentType int, paymentStatus boolean, orderTotalAmount decimal) AS $$
 BEGIN
-	FOR paymentType, paymentStatus, orderTotalAmount IN
-		SELECT payment_type_id, payment_status, (SELECT * FROM get_order_total_amount(order_items.order_header_id)) AS total_order_value
-		FROM order_items LEFT JOIN order_header ON order_items.order_header_id=order_header.id
-		LEFT JOIN products ON order_items.product_id=products.id
-		WHERE order_items.order_header_id=orderNumber
-		GROUP BY order_items.order_header_id, payment_type_id, payment_status
-	LOOP
-		RETURN NEXT;
-	END LOOP;
+    FOR paymentType, paymentStatus, orderTotalAmount IN
+        SELECT payment_type_id, payment_status, (SELECT * FROM get_order_total_amount(order_items.order_header_id)) AS total_order_value
+        FROM order_items LEFT JOIN order_header ON order_items.order_header_id=order_header.id
+        LEFT JOIN products ON order_items.product_id=products.id
+        WHERE order_items.order_header_id=orderNumber
+        GROUP BY order_items.order_header_id, payment_type_id, payment_status
+    LOOP
+        RETURN NEXT;
+    END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -208,10 +208,10 @@ SELECT * FROM order_total_value_with_payment_status_payment_type(1);
 CREATE OR REPLACE FUNCTION order_payment_status(orderNumber int) RETURNS boolean AS $$
 DECLARE paymentStatus boolean;
 BEGIN
-	SELECT INTO paymentStatus payment_status
-	FROM order_header
-	WHERE id=orderNumber;
-	RETURN paymentStatus;
+    SELECT INTO paymentStatus payment_status
+    FROM order_header
+    WHERE id=orderNumber;
+    RETURN paymentStatus;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -226,10 +226,10 @@ SELECT * FROM order_payment_status(15);
 CREATE OR REPLACE FUNCTION order_payment_type(orderNumber int) RETURNS int AS $$
 DECLARE paymentType int;
 BEGIN
-	SELECT INTO paymentType payment_type_id
-	FROM order_header
-	WHERE id=orderNumber;
-	RETURN paymentType;
+    SELECT INTO paymentType payment_type_id
+    FROM order_header
+    WHERE id=orderNumber;
+    RETURN paymentType;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -244,15 +244,15 @@ SELECT * FROM order_payment_type(10);
 
 CREATE OR REPLACE FUNCTION order_details(orderNumber int) RETURNS TABLE (prodId int, prodName varchar, prodDescription varchar, prodPrice decimal, orderedQuantity int, lineTotal decimal) AS $$
 BEGIN
-	FOR prodId, prodName, prodDescription, prodPrice, orderedQuantity, lineTotal IN
-		SELECT products.id, products.name, description, (SELECT * FROM get_product_price(product_id, order_header.created_at)), quantity, quantity*(SELECT * FROM get_product_price(product_id, order_header.created_at)) AS total
-		FROM order_items
-		LEFT JOIN products on order_items.product_id=products.id
-		LEFT JOIN order_header on order_header.id=order_items.order_header_id
-		WHERE order_items.order_header_id=orderNumber
-	LOOP
-		RETURN NEXT;
-	END LOOP;	
+    FOR prodId, prodName, prodDescription, prodPrice, orderedQuantity, lineTotal IN
+        SELECT products.id, products.name, description, (SELECT * FROM get_product_price(product_id, order_header.created_at)), quantity, quantity*(SELECT * FROM get_product_price(product_id, order_header.created_at)) AS total
+        FROM order_items
+        LEFT JOIN products on order_items.product_id=products.id
+        LEFT JOIN order_header on order_header.id=order_items.order_header_id
+        WHERE order_items.order_header_id=orderNumber
+    LOOP
+        RETURN NEXT;
+    END LOOP;	
 END;
 $$ LANGUAGE plpgsql;
 
@@ -267,10 +267,10 @@ SELECT * FROM order_details(17);
 CREATE OR REPLACE FUNCTION product_stock(productid int) RETURNS int AS $$
 DECLARE stockQuantity int;
 BEGIN
-		SELECT INTO stockQuantity quantity
-		FROM product_stock
-		WHERE product_stock.product_id=productid;
-		RETURN stockQuantity;
+    SELECT INTO stockQuantity quantity
+    FROM product_stock
+    WHERE product_stock.product_id=productid;
+    RETURN stockQuantity;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -285,14 +285,14 @@ SELECT * FROM product_stock(8);
 
 CREATE OR REPLACE FUNCTION stock_of_products_included_in_the_order(orderNumber int) RETURNS TABLE (prodId int, prodStockQuantity int) AS $$
 BEGIN
-	FOR prodId, prodStockQuantity IN
-		SELECT order_items.product_id, product_stock.quantity 
-		FROM order_items LEFT JOIN products ON order_items.product_id=products.id 
-		LEFT JOIN product_stock ON order_items.product_id=product_stock.product_id
-		WHERE products.product_type LIKE 'Termék' AND order_items.order_header_id=orderNumber
-	LOOP
-		RETURN NEXT;
-	END LOOP;
+    FOR prodId, prodStockQuantity IN
+        SELECT order_items.product_id, product_stock.quantity 
+        FROM order_items LEFT JOIN products ON order_items.product_id=products.id 
+        LEFT JOIN product_stock ON order_items.product_id=product_stock.product_id
+        WHERE products.product_type LIKE 'Termék' AND order_items.order_header_id=orderNumber
+    LOOP
+        RETURN NEXT;
+    END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -307,11 +307,11 @@ SELECT * FROM stock_of_products_included_in_the_order(8);
 
 CREATE OR REPLACE FUNCTION get_product_category_path(categId int) RETURNS TABLE (id int, name varchar) AS $$
 BEGIN
-	RETURN QUERY
-	SELECT (get_product_category_path(a.parent_id)).* FROM categories a where a.id=categId and a.parent_id IS NOT NULL;
+    RETURN QUERY
+    SELECT (get_product_category_path(a.parent_id)).* FROM categories a where a.id=categId and a.parent_id IS NOT NULL;
 
-	RETURN QUERY
-	SELECT b.id, b.name from categories b where b.id=categId;	
+    RETURN QUERY
+    SELECT b.id, b.name from categories b where b.id=categId;	
 END;
 $$ LANGUAGE plpgsql;
 

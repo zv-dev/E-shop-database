@@ -10,16 +10,16 @@ CREATE TABLE users (
 );
 
 CREATE TABLE addresses (
-	id serial,
-	user_id int REFERENCES users (id) NOT NULL,
-	address_type varchar(20) NOT NULL,
-	country_code varchar(10) NOT NULL,
-	region_id int NOT NULL,
-	city varchar(255) NOT NULL,
-	zip_code varchar(10) NOT NULL,
-	street_name varchar(255) NOT NULL,
-	house_number int NOT NULL,
-	created_at timestamp DEFAULT current_timestamp NOT NULL,
+    id serial,
+    user_id int REFERENCES users (id) NOT NULL,
+    address_type varchar(20) NOT NULL,
+    country_code varchar(10) NOT NULL,
+    region_id int NOT NULL,
+    city varchar(255) NOT NULL,
+    zip_code varchar(10) NOT NULL,
+    street_name varchar(255) NOT NULL,
+    house_number int NOT NULL,
+    created_at timestamp DEFAULT current_timestamp NOT NULL,
     PRIMARY KEY (id, region_id)
 ) PARTITION by list (region_id);
 
@@ -33,10 +33,10 @@ CREATE TABLE eszak_alfold PARTITION OF addresses FOR VALUES IN (7);
 CREATE TABLE del_alfold PARTITION OF addresses FOR VALUES IN (8);
 
 CREATE TABLE categories (
-	id serial PRIMARY KEY,
-	name varchar(255) UNIQUE NOT NULL,
-	parent_id int,
-	created_at timestamp DEFAULT current_timestamp NOT NULL,
+    id serial PRIMARY KEY,
+    name varchar(255) UNIQUE NOT NULL,
+    parent_id int,
+    created_at timestamp DEFAULT current_timestamp NOT NULL,
     updated_at timestamp DEFAULT current_timestamp NOT NULL
 );
 
@@ -45,37 +45,37 @@ CREATE TABLE products (
     sku int NOT NULL,
     name varchar(255) NOT NULL,
     description varchar(255),
-	product_type varchar(255) NOT NULL,
-	UNIQUE (sku, product_type),
+    product_type varchar(255) NOT NULL,
+    UNIQUE (sku, product_type),
     created_at timestamp DEFAULT current_timestamp NOT NULL,
     updated_at timestamp DEFAULT current_timestamp NOT NULL
 );
 
 CREATE TABLE product_categories (
-	id serial PRIMARY KEY,
-	category_id int REFERENCES categories (id) NOT NULL,
-	product_id int REFERENCES products (id) NOT NULL,
-	UNIQUE (category_id, product_id),
-	created_at timestamp DEFAULT current_timestamp NOT NULL,
+    id serial PRIMARY KEY,
+    category_id int REFERENCES categories (id) NOT NULL,
+    product_id int REFERENCES products (id) NOT NULL,
+    UNIQUE (category_id, product_id),
+    created_at timestamp DEFAULT current_timestamp NOT NULL,
     updated_at timestamp DEFAULT current_timestamp NOT NULL
 );
 
 CREATE TABLE product_stock (
-	id serial PRIMARY KEY,
-	product_id int REFERENCES products (id) NOT NULL,
-	quantity int NOT NULL CONSTRAINT positive_quantity CHECK (quantity >= 0),
-	UNIQUE (product_id, quantity),
-	created_at timestamp DEFAULT current_timestamp NOT NULL,
+    id serial PRIMARY KEY,
+    product_id int REFERENCES products (id) NOT NULL,
+    quantity int NOT NULL CONSTRAINT positive_quantity CHECK (quantity >= 0),
+    UNIQUE (product_id, quantity),
+    created_at timestamp DEFAULT current_timestamp NOT NULL,
     updated_at timestamp DEFAULT current_timestamp NOT NULL
 );
 
 CREATE TABLE product_price_changes(
-	id serial PRIMARY KEY,
-	product_id int REFERENCES products (id) NOT NULL,
-	from_date date NOT NULL,
-	price decimal (10, 2) NOT NULL CONSTRAINT positive_product_price_changes CHECK (price >= 0),
-	created_at timestamp DEFAULT current_timestamp NOT NULL,
-	price_actualisation_time timestamp
+    id serial PRIMARY KEY,
+    product_id int REFERENCES products (id) NOT NULL,
+    from_date date NOT NULL,
+    price decimal (10, 2) NOT NULL CONSTRAINT positive_product_price_changes CHECK (price >= 0),
+    created_at timestamp DEFAULT current_timestamp NOT NULL,
+    price_actualisation_time timestamp
 );
 
 CREATE TABLE attributes (
@@ -103,35 +103,35 @@ CREATE TABLE product_attr_values (
 );
 
 CREATE TABLE payment_types (
-	id serial PRIMARY KEY,
-	name varchar(255) UNIQUE NOT NULL,
-	created_at timestamp DEFAULT current_timestamp NOT NULL,
-	updated_at timestamp DEFAULT current_timestamp NOT NULL
+    id serial PRIMARY KEY,
+    name varchar(255) UNIQUE NOT NULL,
+    created_at timestamp DEFAULT current_timestamp NOT NULL,
+    updated_at timestamp DEFAULT current_timestamp NOT NULL
 );
 
 CREATE TABLE order_header (
-	id serial PRIMARY KEY,
-	user_id int REFERENCES users (id) NOT NULL,
-	payment_type_id int REFERENCES payment_types (id) NOT NULL,
-	payment_status boolean NOT NULL DEFAULT 'false',
-	created_at timestamp DEFAULT current_timestamp NOT NULL,
-	updated_at timestamp DEFAULT current_timestamp NOT NULL
+    id serial PRIMARY KEY,
+    user_id int REFERENCES users (id) NOT NULL,
+    payment_type_id int REFERENCES payment_types (id) NOT NULL,
+    payment_status boolean NOT NULL DEFAULT 'false',
+    created_at timestamp DEFAULT current_timestamp NOT NULL,
+    updated_at timestamp DEFAULT current_timestamp NOT NULL
 );
 
 CREATE TABLE order_items (
-	id serial PRIMARY KEY,
-	order_header_id int REFERENCES order_header (id) NOT NULL,
-	product_id int REFERENCES products (id) NOT NULL,
-	quantity int NOT NULL CONSTRAINT positive_ordered_quantity CHECK (quantity > 0) NOT NULL,
-	UNIQUE (order_header_id, product_id),
-	created_at timestamp DEFAULT current_timestamp NOT NULL,
+    id serial PRIMARY KEY,
+    order_header_id int REFERENCES order_header (id) NOT NULL,
+    product_id int REFERENCES products (id) NOT NULL,
+    quantity int NOT NULL CONSTRAINT positive_ordered_quantity CHECK (quantity > 0) NOT NULL,
+    UNIQUE (order_header_id, product_id),
+    created_at timestamp DEFAULT current_timestamp NOT NULL,
     updated_at timestamp DEFAULT current_timestamp NOT NULL
 );
 
 CREATE TABLE invoice (
-	id serial PRIMARY KEY,
-	order_header_id int REFERENCES order_header (id) NOT NULL,
-	UNIQUE (order_header_id), 
-	total decimal(10, 2) NOT NULL CONSTRAINT positive_total_invoice CHECK (total >= 0),
-	created_at timestamp DEFAULT current_timestamp NOT NULL
+    id serial PRIMARY KEY,
+    order_header_id int REFERENCES order_header (id) NOT NULL,
+    UNIQUE (order_header_id), 
+    total decimal(10, 2) NOT NULL CONSTRAINT positive_total_invoice CHECK (total >= 0),
+    created_at timestamp DEFAULT current_timestamp NOT NULL
 );

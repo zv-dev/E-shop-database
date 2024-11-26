@@ -27,7 +27,7 @@ ORDER BY darab DESC
 FETCH FIRST 1 ROWS WITH TIES;
 
 --Melyik termékből hány darab van készleten?*********************************************************************************
-	
+    
 SELECT product_stock.product_id, sku, products.name, quantity AS elérhető_mennyiség
 FROM product_stock LEFT JOIN products ON product_stock.product_id=products.id;
 
@@ -88,10 +88,10 @@ SELECT products.id, products.name || ':' || ' ' || categories.name AS termék_n�
 FROM products, categories, product_categories
 WHERE products.id=product_categories.product_id AND categories.id=product_categories.category_id
 AND products.id IN (
-	SELECT product_id
-	FROM product_categories LEFT JOIN products ON product_categories.product_id=products.id 
-	GROUP BY product_id
-	HAVING COUNT(product_id)>1
+    SELECT product_id
+    FROM product_categories LEFT JOIN products ON product_categories.product_id=products.id 
+    GROUP BY product_id
+    HAVING COUNT(product_id)>1
 );
 
 --Terméklista attribútumokkal*********************************************************************************
